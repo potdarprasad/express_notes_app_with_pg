@@ -7,7 +7,7 @@ class AuthService {
 
             const user = (await pool.query(`SELECT * FROM users WHERE email = $1`, [email]))?.rows[0];
             if (user) {
-                throw Error('User with this email already exists');
+                res.render('auth/register', { firstName, lastName, email, password, errors: ['User with this email already exists'] });
             }
 
             await pool.query(`INSERT INTO users (first_name, last_name, email, password) VALUES ($1, $2, $3, $4)`, [
@@ -25,13 +25,16 @@ class AuthService {
             const user = (await pool.query(`SELECT * FROM users WHERE email = $1`, [email]))?.rows[0];
 
             if (!user) {
-                throw Error('User Does Not Exist');
+                console.log('user not found');
+                res.render('auth/login', { email, password, errors: ['User does not exists'] });
             }
 
             if (user.password === password) {
-                res.send('success');
+                req.session.email = user.email;
+                req.session.userId = user.id;
+                res.redirect('/notes');
             } else {
-                throw Error('Invalid username or password');
+                res.render('auth/login', { email, password, errors: ['Invalid username or password'] });
             }
         } catch (error) {
             res.render('error', { message: error.message, error });
